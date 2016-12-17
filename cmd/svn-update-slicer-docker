@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Bash file allowing to update the Slicer's SVN & SlicerDocker's SVN automatically
+
+script_dir="`cd $(dirname $0); pwd`"
+
+echo "*********************************************"
+echo "*************** Slicer UPDATE ***************"
+echo "*********************************************"
+
+pushd $HOME/MyProjects/Slicer/
+
+current_branch="`git branch | grep \* | cut -d ' ' -f2`"
+
+# unique timestamp
+t=timestamp-$(date +%s)
+
+# stash with message
+r=$(git stash save $t)
+echo $r
+
+# check if the value exists
+v=$(echo $r|grep $t)
+
+#update master and its svn
+git checkout master
+git fetch origin
+git rebase origin/master
+git svn rebase
+
+git checkout $current_branch
+
+# if smthing stashed
+if [ "$v" ]; then 
+  git stash pop
+else
+  echo "Nothing stashed"
+fi
+
+popd
+
+echo "*********************************************"
+echo "************ SlicerDocker UPDATE ************"
+echo "*********************************************"
+
+pushd $HOME/MyProjects/Docker/SlicerDocker/
+
+current_branch="`git branch | grep \* | cut -d ' ' -f2`"
+
+# unique timestamp
+t=timestamp-$(date +%s)
+
+# stash with message
+r=$(git stash save $t)
+echo $r
+
+# check if the value exists
+v=$(echo $r|grep $t)
+
+#update master and its svn
+git checkout -b update-$(date +%F)
+git fetch origin
+git rebase origin/master
+git config --global svn.rmdir true
+./slicer-base/update.sh ~/MyProjects/Slicer
+git push MayeulChassagnard/SlicerDocker update-$(date +%F)
+
+git checkout $current_branch
+
+#remove tmp branch pushed to update svn
+git branch -D update-$(date +%F)
+
+# if something stashed
+if [ "$v" ]; then 
+  git stash pop
+else
+  echo "Nothing stashed"
+fi
+
+popd
+
