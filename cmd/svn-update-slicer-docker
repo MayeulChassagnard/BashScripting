@@ -10,17 +10,17 @@ echo "*********************************************"
 
 pushd $HOME/MyProjects/Slicer/
 
-current_branch="`git branch | grep \* | cut -d ' ' -f2`"
+current_slicer_branch="`git branch | grep \* | cut -d ' ' -f2`"
 
 # unique timestamp
-t=timestamp-$(date +%s)
+slicer_t=timestamp-$(date +%s)
 
 # stash with message
-r=$(git stash save $t)
-echo $r
+slicer_r=$(git stash save $slicer_t)
+echo $slicer_r
 
 # check if the value exists
-v=$(echo $r|grep $t)
+slicer_v=$(echo $slicer_r|grep $slicer_t)
 
 #update master and its svn
 git checkout master
@@ -28,16 +28,6 @@ git fetch origin
 git rebase origin/master
 git svn rebase
 
-git checkout $current_branch
-
-# if smthing stashed
-if [ "$v" ]; then 
-  git stash pop
-else
-  echo "Nothing stashed"
-fi
-
-popd
 
 echo "*********************************************"
 echo "************ SlicerDocker UPDATE ************"
@@ -45,33 +35,48 @@ echo "*********************************************"
 
 pushd $HOME/MyProjects/Docker/SlicerDocker/
 
-current_branch="`git branch | grep \* | cut -d ' ' -f2`"
+current_slicerdocker_branch="`git branch | grep \* | cut -d ' ' -f2`"
 
 # unique timestamp
-t=timestamp-$(date +%s)
+slicerdocker_t=timestamp-$(date +%s)
 
 # stash with message
-r=$(git stash save $t)
-echo $r
+slicerdocker_r=$(git stash save $slicerdocker_t)
+echo $slicerdocker_r
 
 # check if the value exists
-v=$(echo $r|grep $t)
+slicerdocker_v=$(echo $slicerdocker_r|grep $slicerdocker_t)
 
 #update master and its svn
-git checkout -b update-$(date +%F)
+git checkout master
 git fetch origin
 git rebase origin/master
+git checkout -b update-$(date +%F)
 git config --global svn.rmdir true
-./slicer-base/update.sh ~/MyProjects/Slicer
+./slicer-base/update.sh $HOME/MyProjects/Slicer
 git push MayeulChassagnard/SlicerDocker update-$(date +%F)
 
-git checkout $current_branch
+git checkout $current_slicerdocker_branch
 
 #remove tmp branch pushed to update svn
 git branch -D update-$(date +%F)
 
-# if something stashed
-if [ "$v" ]; then 
+# if smthing stashed
+if [ "$slicerdocker_v" ]; then
+  git stash pop
+else
+  echo "Nothing stashed"
+fi
+
+popd
+
+
+# Back to Slicer
+
+git checkout $current_slicer_branch
+
+# if smthing stashed
+if [ "$slicer_v" ]; then
   git stash pop
 else
   echo "Nothing stashed"
